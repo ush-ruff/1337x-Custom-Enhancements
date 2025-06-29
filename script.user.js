@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.1.0
+// @version      0.1.1
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -79,7 +79,13 @@ function sortFilter({ category, sortOrder = null, side = 'right' }) {
       return console.info(`List already sorted for ${category} as ${lowerSortOrder === 'desc' ? 'descending' : 'ascending'}.`)
     }
 
-    match = options.find(option => option.dataset.rawValue.toLowerCase().includes(lowerCategory) && option.dataset.rawValue.toLowerCase().includes(lowerSortOrder))
+    match = options.find(option => option.dataset.rawValue.toLowerCase().includes(lowerCategory))
+
+    if (!match.dataset.rawValue.includes(lowerSortOrder)) {
+      const replaceStr = lowerSortOrder === 'desc' ? 'asc' : 'desc'
+      let updatedValue = match.dataset.rawValue.replace(replaceStr, lowerSortOrder)
+      match.dataset.rawValue = updatedValue
+    }
   }
   // For filtering
   else if (side === 'left') {
