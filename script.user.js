@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.2.0
+// @version      0.2.1
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -87,7 +87,7 @@ function sortFilter({ category, sortOrder = null, side = 'right' }) {
       return (parts?.type === 'sort' && parts.sortBy === lowerCategory && parts.sortOrder === lowerSortOrder)
     })
 
-    // Fallback: match category and swap the order (if order wasn't in the list)
+    // Fallback: match category and insert the requested order
     if (!match) {
       const fallback = options.find(option => {
         const parts = parseRawValue(option)
@@ -96,8 +96,8 @@ function sortFilter({ category, sortOrder = null, side = 'right' }) {
 
       if (fallback) {
         const parts = parseRawValue(fallback)
-        parts.rawValue[5] = lowerSortOrder
-        fallback.dataset.rawValue = parts.rawValue.join('/')
+        parts.rawValue[parts.sortOrderIndex] = lowerSortOrder
+        fallback.setAttribute('data-raw-value', parts.rawValue.join('/'))
         match = fallback
       }
     }
@@ -130,17 +130,27 @@ function parseRawValue(element) {
 
   const parts = rawValue.split('/')
 
-  // Handle sorting (e.g., /sort-category-search/atvp/Movies/time/desc/1/)
-  if (parts.length > 6 && parts[1] === 'sort-category-search') {
+  // Handle sorting
+  if (parts.length > 6 && parts[1] === 'sort-search') {
+    return {
+      type: 'sort',
+      sortBy: parts[3]?.toLowerCase(),
+      sortOrder: parts[4],
+      sortOrderIndex: 4,
+      rawValue: parts,
+    }
+  }
+  else if (parts.length > 6 && parts[1] === 'sort-category-search') {
     return {
       type: 'sort',
       sortBy: parts[4]?.toLowerCase(),
       sortOrder: parts[5],
+      sortOrderIndex: 5,
       rawValue: parts,
     }
   }
 
-  // Handle filtering (e.g., /category-search/atvp/Movies/1/)
+  // Handle filtering
   else if (parts.length > 3 && parts[1] === 'category-search') {
     return {
       type: 'filter',
