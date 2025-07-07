@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.1.1
+// @version      0.2.0
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -13,9 +13,11 @@
 const KEYS = {
   70:         () => focusSelectElement(`.ui-autocomplete-input[type="search"]`),        // key: F
   65:         () => sortFilter({category: 'TV', side: 'left'}),                         // key: A
-  68:         () => sortFilter({category: 'Movies', side: 'left'}),                     // key: S
+  83:         () => sortFilter({category: 'Anime', side: 'left'}),                      // key: S
+  68:         () => sortFilter({category: 'Movies', side: 'left'}),                     // key: D
   'shift+70': () => sortFilter({category: 'size', sortOrder: 'desc'}),                  // key: Shift + F
   'shift+71': () => sortFilter({category: 'size', sortOrder: 'asc'}),                   // key: Shift + G
+  'shift+84': () => sortFilter({category: 'time', sortOrder: 'desc'}),                  // key: Shift + T
 }
 
 
@@ -79,29 +81,74 @@ function sortFilter({ category, sortOrder = null, side = 'right' }) {
       return console.info(`List already sorted for ${category} as ${lowerSortOrder === 'desc' ? 'descending' : 'ascending'}.`)
     }
 
-    match = options.find(option => option.dataset.rawValue.toLowerCase().includes(lowerCategory))
+    // Try full match: category and sort order
+    match = options.find(option => {
+      const parts = parseRawValue(option)
+      return (parts?.type === 'sort' && parts.sortBy === lowerCategory && parts.sortOrder === lowerSortOrder)
+    })
 
-    if (!match.dataset.rawValue.includes(lowerSortOrder)) {
-      const replaceStr = lowerSortOrder === 'desc' ? 'asc' : 'desc'
-      let updatedValue = match.dataset.rawValue.replace(replaceStr, lowerSortOrder)
-      match.dataset.rawValue = updatedValue
+    // Fallback: match category and swap the order (if order wasn't in the list)
+    if (!match) {
+      const fallback = options.find(option => {
+        const parts = parseRawValue(option)
+        return (parts?.type === 'sort' && parts.sortBy === lowerCategory)
+      })
+
+      if (fallback) {
+        const parts = parseRawValue(fallback)
+        parts.rawValue[5] = lowerSortOrder
+        fallback.dataset.rawValue = parts.rawValue.join('/')
+        match = fallback
+      }
     }
   }
+
   // For filtering
   else if (side === 'left') {
     if (options[0].classList.contains('selected') && options[0].textContent.toLowerCase() === lowerCategory) {
       return console.info(`${category} category already selected.`)
     }
 
-    match = options.find(option => option.dataset.rawValue.toLowerCase().includes(lowerCategory))
+    match = options.find(option => {
+      const parts = parseRawValue(option)
+      return (parts?.type === 'filter' && parts.category === lowerCategory)
+    })
   }
 
+  // Check if sort/filter option was returned
   if (!match) return console.warn(`No ${category} found under ${side === 'right' ? 'sorting' : 'filtering'} options.`)
 
   // Update the URL and reload the page
   const url = new URL(window.location.href)
   url.pathname = match.dataset.rawValue
   window.location.href = url.href
+}
+
+function parseRawValue(element) {
+  const rawValue = element?.getAttribute('data-raw-value')
+  if (!rawValue) return null
+
+  const parts = rawValue.split('/')
+
+  // Handle sorting (e.g., /sort-category-search/atvp/Movies/time/desc/1/)
+  if (parts.length > 6 && parts[1] === 'sort-category-search') {
+    return {
+      type: 'sort',
+      sortBy: parts[4]?.toLowerCase(),
+      sortOrder: parts[5],
+      rawValue: parts,
+    }
+  }
+
+  // Handle filtering (e.g., /category-search/atvp/Movies/1/)
+  else if (parts.length > 3 && parts[1] === 'category-search') {
+    return {
+      type: 'filter',
+      category: parts[3]?.toLowerCase(),
+    }
+  }
+
+  return null
 }
 
 function appendColumn() {
