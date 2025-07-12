@@ -2,23 +2,59 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.2.1
+// @version      0.3.0
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
 // @downloadURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/raw/main/script.user.js
 // @grant        none
+// @license     GNU GPLv3
 // ==/UserScript==
 
+// -----------------------
+// CONFIGURABLE VARIABLES
+// -----------------------
 const KEYS = {
   70:         () => focusSelectElement(`.ui-autocomplete-input[type="search"]`),        // key: F
-  65:         () => sortFilter({category: 'TV', side: 'left'}),                         // key: A
-  83:         () => sortFilter({category: 'Anime', side: 'left'}),                      // key: S
+  65:         () => sortFilter({category: 'Anime', side: 'left'}),                      // key: A
+  83:         () => sortFilter({category: 'TV', side: 'left'}),                         // key: S
   68:         () => sortFilter({category: 'Movies', side: 'left'}),                     // key: D
   'shift+70': () => sortFilter({category: 'size', sortOrder: 'desc'}),                  // key: Shift + F
   'shift+71': () => sortFilter({category: 'size', sortOrder: 'asc'}),                   // key: Shift + G
   'shift+84': () => sortFilter({category: 'time', sortOrder: 'desc'}),                  // key: Shift + T
 }
+
+
+// --------------------
+// REFERENCE VARIABLES
+// --------------------
+const SELECTORS = {
+  allTables: ".table-list-wrap",  // for pages with multiple tables e.g. https://1337x.to/home/
+  isSeries: "/series/",           // for pages with tables that have no header e.g. https://1337x.to/series/a-to-z/1/13/
+  headerCells: `.table-list > thead > tr:not(.blank) > th:nth-child(1), .table-list > tbody > tr:not(.blank) > td:nth-child(1)`,
+  newCells: `.table-list > thead > tr:not(.blank) > th:nth-child(2), .table-list > tbody > tr:not(.blank) > td:nth-child(2)`,
+  linkMagnet: 'a[href^="magnet:"]',
+  linkDL: '.dropdown-menu > li > a',
+}
+
+const DEFINED_NAMES = {
+  columnTitle: "ml&nbsp;dl",
+  btnMagnet: "list-button-magnet",
+  btnDL: "list-button-dl",
+  typeMagnet: "ml",
+  typeDL: "dl",
+}
+
+const CELL_INNER_HTML = (href) => (
+  `
+    <a class=${DEFINED_NAMES.btnMagnet} data-href="${href}" href="javascript:void(0)" title="Magnet">
+      <i class="flaticon-magnet"></i>
+    </a>
+    <a class=${DEFINED_NAMES.btnDL} data-href="${href}" href="javascript:void(0)" title="Direct Download">
+      <i class="flaticon-torrent-download"></i>
+    </a>
+  `
+)
 
 
 // -------------------------------------------
@@ -48,8 +84,8 @@ function pressKey(e) {
 function createColumn() {
   addStyle()
   appendColumn()
-  addClickListeners(document.querySelectorAll('.list-button-magnet'), 'ml')
-  addClickListeners(document.querySelectorAll('.list-button-dl'), 'dl')
+  addClickListeners(document.querySelectorAll(`.${DEFINED_NAMES.btnMagnet}`), DEFINED_NAMES.typeMagnet)
+  addClickListeners(document.querySelectorAll(`.${DEFINED_NAMES.btnDL}`), DEFINED_NAMES.typeDL)
 }
 
 
@@ -162,29 +198,28 @@ function parseRawValue(element) {
 }
 
 function appendColumn() {
-  const allTables = document.querySelectorAll('.table-list-wrap')  // for pages with multiple tables e.g. https://1337x.to/home/
-	const isSeries = window.location.href.includes('/series/')       // for pages with tables that have no header e.g. https://1337x.to/series/a-to-z/1/13/
-  const title = 'ml&nbsp;dl'
+  const allTables = document.querySelectorAll(SELECTORS.allTables)         // for pages with multiple tables e.g. https://1337x.to/home/
+	const isSeries = window.location.href.includes(SELECTORS.isSeries)       // for pages with tables that have no header e.g. https://1337x.to/series/a-to-z/1/13/
 
   allTables.forEach((table) => {
-    const headerCells = table.querySelectorAll(`.table-list > thead > tr:not(.blank) > th:nth-child(1), .table-list > tbody > tr:not(.blank) > td:nth-child(1)`)
+    const headerCells = table.querySelectorAll(SELECTORS.headerCells)
 
     headerCells.forEach((cell, index) => {
       if (index === 0 && !isSeries) {
-        cell.insertAdjacentHTML('afterend', `<th>${title}</th>`)
+        cell.insertAdjacentHTML('afterend', `<th>${DEFINED_NAMES.columnTitle}</th>`)
       }
       else {
-        cell.insertAdjacentHTML('afterend', `<td>${title}</td>`)
+        cell.insertAdjacentHTML('afterend', `<td>${DEFINED_NAMES.columnTitle}</td>`)
       }
     })
 
-    const newCells = table.querySelectorAll(`.table-list > thead > tr:not(.blank) > th:nth-child(2), .table-list > tbody > tr:not(.blank) > td:nth-child(2)`)
+    const newCells = table.querySelectorAll(SELECTORS.newCells)
 
     newCells.forEach((cell, index) => {
       cell.classList.add('coll-1b')
 
       if (index === 0 && !isSeries) {
-        cell.innerHTML = title
+        cell.innerHTML = DEFINED_NAMES.columnTitle
       }
       else {
         cell.classList.add('dl-buttons')
@@ -194,14 +229,7 @@ function appendColumn() {
 
         const href = linkElement?.href?.trim() || '#'
 
-        cell.innerHTML = `
-          <a class="list-button-magnet" data-href="${href}" href="javascript:void(0)" title="Magnet">
-            <i class="flaticon-magnet"></i>
-          </a>
-          <a class="list-button-dl" data-href="${href}" href="javascript:void(0)" title="Direct Download">
-            <i class="flaticon-torrent-download"></i>
-          </a>
-        `;
+        cell.innerHTML = CELL_INNER_HTML(href)
       }
     })
   })
@@ -221,14 +249,14 @@ function addClickListeners(buttons, type) {
         const tempDoc = document.implementation.createHTMLDocument().documentElement
         tempDoc.innerHTML = text
 
-        const link = (type === 'ml') ? tempDoc.querySelector('a[href^="magnet:"]') : tempDoc.querySelector('.dropdown-menu > li > a')
+        const link = (type === DEFINED_NAMES.typeMagnet) ? tempDoc.querySelector(SELECTORS.linkMagnet) : tempDoc.querySelector(SELECTORS.linkDL)
 
         if (link) {
           const finalHref = link.href.replace(/^http:/, 'https:')
           window.location.href = finalHref
         }
         else {
-          alert(`No ${type === 'ml' ? 'magnet' : 'direct download'} link found.`)
+          alert(`No ${type === DEFINED_NAMES.typeMagnet ? 'magnet' : 'direct download'} link found.`)
         }
       }
       catch (err) {
@@ -265,12 +293,12 @@ function addStyle() {
       border-right: 1px solid #c0c0c0;
     }
 
-    .list-button-magnet > i.flaticon-magnet {
+    .${DEFINED_NAMES.btnMagnet} > i.flaticon-magnet {
       font-size: 13px;
       color: #da3a04
     }
 
-    .list-button-dl > i.flaticon-torrent-download {
+    .${DEFINED_NAMES.btnDL} > i.flaticon-torrent-download {
       font-size: 13px;
       color: #89ad19;
     }
