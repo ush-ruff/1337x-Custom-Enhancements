@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.4.1
+// @version      0.4.2
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -427,7 +427,8 @@ function addStyle() {
     }
 
     #${MODAL_ID} .${MODAL_ID}-title {
-      font-size: 2rem;
+      font-size: 1.8rem;
+      font-weight: 600;
       margin: 0;
       padding: 0.8rem;
       border: unset;
