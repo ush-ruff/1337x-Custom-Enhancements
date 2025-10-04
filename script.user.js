@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.4.0
+// @version      0.4.1
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -408,7 +408,7 @@ function addStyle() {
       min-width: 700px;
       padding: 1rem;
       background: #222;
-      border: 1px solid #1e1e1e;
+      border: unset;
       border-radius: 0.5rem;
       color: #bbb;
       box-shadow: 0 0 10px 2px rgb(0 0 0 / 0.5);
@@ -429,7 +429,7 @@ function addStyle() {
     #${MODAL_ID} .${MODAL_ID}-title {
       font-size: 2rem;
       margin: 0;
-      padding: 0.8rem 1.6rem;
+      padding: 0.8rem;
       border: unset;
       color: #e5e5e5;
     }
@@ -449,13 +449,14 @@ function addStyle() {
     }
 
     #${MODAL_ID} ul {
-      margin: 1.6rem 2.5rem;
+      margin: 0.8rem 2rem 0;
       padding: 0;
     }
 
     #${MODAL_ID} li {
       list-style: none;
       display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 8rem;
       padding-block: 0.75rem;
@@ -479,7 +480,7 @@ function addStyle() {
       position: relative;
     }
 
-    .top-bar > .container::before {
+    .top-bar > .container:has(.top-bar-nav:first-child)::before {
       content: '${SHORTCUT_TOOLTIP}';
       position: absolute;
       top: -3px;
