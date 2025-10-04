@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancement
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.3.0
+// @version      0.4.0
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -15,14 +15,42 @@
 // CONFIGURABLE VARIABLES
 // -----------------------
 const KEYS = {
-  70:         () => focusSelectElement(`.ui-autocomplete-input[type="search"]`),        // key: F
-  65:         () => sortFilter({category: 'Anime', side: 'left'}),                      // key: A
-  83:         () => sortFilter({category: 'TV', side: 'left'}),                         // key: S
-  68:         () => sortFilter({category: 'Movies', side: 'left'}),                     // key: D
-  'shift+70': () => sortFilter({category: 'size', sortOrder: 'desc'}),                  // key: Shift + F
-  'shift+71': () => sortFilter({category: 'size', sortOrder: 'asc'}),                   // key: Shift + G
-  'shift+84': () => sortFilter({category: 'time', sortOrder: 'desc'}),                  // key: Shift + T
+  "F": {
+    action: () => focusSelectElement(`.ui-autocomplete-input[type="search"]`),
+    label: "Search",
+  },
+  "A": {
+    action: () => sortFilter({category: 'Anime', side: 'left'}),
+    label: "Filter by Anime",
+  },
+  "S": {
+    action: () => sortFilter({category: 'TV', side: 'left'}),
+    label: "Filter by TV",
+  },
+  "D": {
+    action: () => sortFilter({category: 'Movies', side: 'left'}),
+    label: "Filter by Movies",
+  },
+  "Shift + F": {
+    action: () => sortFilter({category: 'size', sortOrder: 'desc'}),
+    label: "Sort by size (descending)",
+  },
+  "Shift + G": {
+    action: () => sortFilter({category: 'size', sortOrder: 'asc'}),
+    label: "Sort by size (ascending)",
+  },
+  "Shift + T": {
+    action: () => sortFilter({category: 'time', sortOrder: 'desc'}),
+    label: "Sort by time (descending)",
+  },
+  "Shift + ?": {
+    action: () => showShortcuts(),
+    label: "Show shortcut help",
+  },
 }
+
+const MODAL_ID = "shortcut-modal"
+const SHORTCUT_TOOLTIP = ` Press "?" to view shortcut keys.`
 
 
 // --------------------
@@ -45,8 +73,7 @@ const DEFINED_NAMES = {
   typeDL: "dl",
 }
 
-const CELL_INNER_HTML = (href) => (
-  `
+const CELL_INNER_HTML = (href) =>  `
     <a class=${DEFINED_NAMES.btnMagnet} data-href="${href}" href="javascript:void(0)" title="Magnet">
       <i class="flaticon-magnet"></i>
     </a>
@@ -54,44 +81,75 @@ const CELL_INNER_HTML = (href) => (
       <i class="flaticon-torrent-download"></i>
     </a>
   `
-)
+
 
 
 // -------------------------------------------
 // Event Listeners
 // -------------------------------------------
-window.addEventListener("load", createColumn)
+window.addEventListener("load", () => {
+  addStyle()
+  createColumn()
+  setupShortcutInfo()
+})
+
 document.addEventListener("keyup", pressKey)
+
 
 
 // -------------------------------------------
 // Main Functions
 // -------------------------------------------
 function pressKey(e) {
-  let key = e.keyCode
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return
 
-  if (e.ctrlKey) key = `ctrl+${key}`
-  if (e.shiftKey) key = `shift+${key}`
-  if (e.altKey) key = `alt+${key}`
-
-  if (e.target.tagName == "INPUT" || e.target.tagName == "TEXTAREA") return
-
-  if (key in KEYS) {
-    return KEYS[key]()
+  const keyName = normalizeKey(e)
+  if (KEYS[keyName]) {
+    e.preventDefault()
+    KEYS[keyName].action()
   }
 }
 
 function createColumn() {
-  addStyle()
   appendColumn()
   addClickListeners(document.querySelectorAll(`.${DEFINED_NAMES.btnMagnet}`), DEFINED_NAMES.typeMagnet)
   addClickListeners(document.querySelectorAll(`.${DEFINED_NAMES.btnDL}`), DEFINED_NAMES.typeDL)
+}
+
+function setupShortcutInfo() {
+  insertModalHTML()
+
+  const shortcutModal = document.querySelector(`#${MODAL_ID}`)
+  const closeBtn = shortcutModal.querySelector(`.${MODAL_ID}-close`)
+  closeBtn.addEventListener("click", () => {shortcutModal.close()})
+
+  window.addEventListener("click", (event) => {
+    if (event.target === shortcutModal) shortcutModal.close()
+  })
 }
 
 
 // -------------------------------------------
 // Helper Functions
 // -------------------------------------------
+function normalizeKey(e) {
+  const parts = []
+  if (e.ctrlKey) parts.push("Ctrl")
+  if (e.shiftKey) parts.push("Shift")
+  if (e.altKey) parts.push("Alt")
+
+  // Convert key into friendly text
+  let keyText = e.key.toUpperCase()
+  if (keyText === " ") keyText = "Space"
+  if (keyText.length > 1 && !/F\d+/.test(keyText)) {
+    // Special named keys (ArrowUp, Escape, etc.)
+    keyText = keyText[0].toUpperCase() + keyText.slice(1)
+  }
+
+  parts.push(keyText)
+  return parts.join(" + ")
+}
+
 function focusSelectElement(element) {
   const el = document.querySelector(element)
 
@@ -225,7 +283,7 @@ function appendColumn() {
         cell.classList.add('dl-buttons')
 
         const originalCell = headerCells[index]
-        let linkElement = isSeries ? originalCell?.firstElementChild : originalCell?.firstElementChild?.nextElementSibling
+        const linkElement = isSeries ? originalCell?.firstElementChild : originalCell?.firstElementChild?.nextElementSibling
 
         const href = linkElement?.href?.trim() || '#'
 
@@ -269,9 +327,51 @@ function addClickListeners(buttons, type) {
   })
 }
 
+function showShortcuts() {
+  const shortcutModal = document.querySelector(`#${MODAL_ID}`)
+  shortcutModal.showModal()
+}
+
+function insertModalHTML() {
+  if (document.getElementById(MODAL_ID)) return
+
+  const modal = document.createElement("dialog")
+  modal.id = MODAL_ID
+
+  const modalInner = `
+    <div class="${MODAL_ID}-header">
+      <h2 class="${MODAL_ID}-title">Shortcut Keys</h2>
+      <span class="${MODAL_ID}-close">&times;</span>
+    </div>
+  `
+  modal.innerHTML = modalInner
+
+  const keyList = document.createElement("ul")
+
+  Object.entries(KEYS).forEach(([key, {label}]) => {
+    const listItem = document.createElement("li")
+
+    const shortcutInfo = document.createElement("span")
+    shortcutInfo.textContent = label
+    listItem.appendChild(shortcutInfo)
+
+    const shortcutKey = document.createElement("code")
+    shortcutKey.classList.add("shortcut-key")
+    shortcutKey.textContent = key
+    listItem.appendChild(shortcutKey)
+
+    keyList.appendChild(listItem)
+  })
+
+  modal.appendChild(keyList)
+  document.body.appendChild(modal)
+}
+
 function addStyle() {
   const styleSheet = document.createElement("style")
+
   styleSheet.textContent = `
+    /* Table Styles */
     main.container, div.container {
       max-width: 1600px;
     }
@@ -301,6 +401,91 @@ function addStyle() {
     .${DEFINED_NAMES.btnDL} > i.flaticon-torrent-download {
       font-size: 13px;
       color: #89ad19;
+    }
+
+    /* Modal Styles */
+    #${MODAL_ID} {
+      min-width: 700px;
+      padding: 1rem;
+      background: #222;
+      border: 1px solid #1e1e1e;
+      border-radius: 0.5rem;
+      color: #bbb;
+      box-shadow: 0 0 10px 2px rgb(0 0 0 / 0.5);
+      outline: none;
+    }
+
+    #${MODAL_ID}::backdrop {
+      background: rgb(0 0 0 / 0.75);
+    }
+
+    .${MODAL_ID}-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+    }
+
+    #${MODAL_ID} .${MODAL_ID}-title {
+      font-size: 2rem;
+      margin: 0;
+      padding: 0.8rem 1.6rem;
+      border: unset;
+      color: #e5e5e5;
+    }
+
+    .${MODAL_ID}-close {
+      font-size: 2.4rem;
+      padding-inline: 0.8rem;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .${MODAL_ID}-close:is(:hover, :focus) {
+      border: none;
+      color: #f9f2f4;
+    }
+
+    #${MODAL_ID} ul {
+      margin: 1.6rem 2.5rem;
+      padding: 0;
+    }
+
+    #${MODAL_ID} li {
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      gap: 8rem;
+      padding-block: 0.75rem;
+    }
+
+    #${MODAL_ID} li:not(:last-child) {
+      border-bottom: 1px solid #333;
+    }
+
+    .shortcut-key {
+      min-width: 120px;
+      text-align: center;
+      line-height: 2;
+      background: #333;
+      border-radius: 0.2rem;
+      color: #f9f2f4;
+    }
+
+    /* Add shortcut key tooltip to page. */
+    .top-bar > .container {
+      position: relative;
+    }
+
+    .top-bar > .container::before {
+      content: '${SHORTCUT_TOOLTIP}';
+      position: absolute;
+      top: -3px;
+      left: 15px;
+      font-size: 0.85rem;
+      font-style: italic;
     }
   `
   document.head.append(styleSheet)
