@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         1337x - Custom Enhancement
+// @name         1337x - Custom Enhancements
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      0.4.2
+// @version      0.4.3
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
