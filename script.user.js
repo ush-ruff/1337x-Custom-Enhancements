@@ -2,14 +2,13 @@
 // @name         1337x - Custom Enhancements
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      1.0.0
+// @version      1.1.0
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
 // @downloadURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/raw/main/script.user.js
 // @grant        none
 // @license      GNU GPLv3
-// @require      https://raw.githubusercontent.com/ush-ruff/Common/refs/heads/main/Userscript-Helper-Lib/helpersLib.js
 // ==/UserScript==
 
 // -----------------------
@@ -57,8 +56,6 @@ const SHORTCUT_TOOLTIP = ` Press "?" to view shortcut keys.`
 // --------------------
 // REFERENCE VARIABLES
 // --------------------
-const { installKeyHandler, setupShortcutInfo, showShortcutInfo, focusSelectElement } = window.ushruffUSKit
-
 const SELECTORS = {
   allTables: ".table-list-wrap",  // for pages with multiple tables e.g. https://1337x.to/home/
   isSeries: "/series/",           // for pages with tables that have no header e.g. https://1337x.to/series/a-to-z/1/13/
@@ -84,6 +81,35 @@ const CELL_INNER_HTML = (href) =>  `
       <i class="flaticon-torrent-download"></i>
     </a>
   `
+
+
+// --------------------
+// SETUP DEPENDENCIES
+// --------------------
+const LIB_INSTALL_URL = "https://raw.githubusercontent.com/ush-ruff/Common/main/Userscript-Helper-Lib/helpersLib.user.js"
+
+function ensureLibrary() {
+  const lib = window.ushruffUSKit
+
+  if (!lib) {
+    console.error(
+      `The installed script requires ushrufUSKit library. Install the script and refresh the current tab.\n` +
+      `If the script does not automatically redirect you, visit the following link.\n` +
+      `${LIB_INSTALL_URL}` +
+      `Ensure that the library runs before the current script to avoid errors.`
+    )
+    window.open(LIB_INSTALL_URL, "_blank")
+    return false
+  }
+
+  return true
+}
+
+if (!ensureLibrary()) {
+  return
+}
+
+const { installKeyHandler, setupShortcutInfo, showShortcutInfo, focusSelectElement } = window.ushruffUSKit
 
 
 // -------------------------------------------
