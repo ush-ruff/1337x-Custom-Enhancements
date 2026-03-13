@@ -2,7 +2,7 @@
 // @name         1337x - Custom Enhancements
 // @namespace    Violentmonkey Scripts
 // @match        https://1337x.to/*
-// @version      1.2.0
+// @version      1.2.1
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -50,7 +50,8 @@ const KEYS = {
   },
 }
 
-const MODAL_ID = "shortcut-modal"
+const SCRIPT_ID = "x1337x-custom-enhancements"
+const MODAL_ID = "x1337x-shortcut-modal"
 const SHORTCUT_TOOLTIP = ` Press "?" to view shortcut keys.`
 
 
@@ -88,7 +89,7 @@ const CELL_INNER_HTML = (href) =>  `
 // Setup Dependencies
 // -------------------------------------------
 const ushruffUSKit = ensureUSKit.getUSKit()
-const { installKeyHandler, setupShortcutInfo, showShortcutInfo, focusSelectElement } = window.ushruffUSKit
+const { registerShortcutKeys, setupShortcutInfo, showShortcutInfo, focusSelectElement } = window.ushruffUSKit
 
 
 // -------------------------------------------
@@ -97,7 +98,7 @@ const { installKeyHandler, setupShortcutInfo, showShortcutInfo, focusSelectEleme
 // console.log("lib version:", window.ushruffUSKit?.version)
 
 window.addEventListener("load", () => {
-  installKeyHandler(KEYS)
+  registerShortcutKeys(SCRIPT_ID, KEYS)
   setupShortcutInfo(MODAL_ID, KEYS)
   addStyle()
   createColumn()
