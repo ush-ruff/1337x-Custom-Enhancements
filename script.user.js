@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         1337x - Custom Enhancements
 // @namespace    Violentmonkey Scripts
-// @match        https://1337x.to/*
-// @version      1.2.1
+// @match        https://*.1337x.to/*
+// @version      1.3.0
 // @author       ushruff
 // @description  Setup custom keyboard shortcuts for 1337x.to
 // @homepageURL  https://github.com/ush-ruff/1337x-Custom-Enhancements/
@@ -19,6 +19,14 @@ const KEYS = {
   "F": {
     action: () => focusSelectElement(`.ui-autocomplete-input[type="search"]`),
     label: "Search",
+  },
+  "W": {
+    action: () => focusSelectElement(`.list-button-magnet`, MAGNET_LIST),
+    label: "Select next magnet link",
+  },
+  "Shift + W": {
+    action: () => focusSelectElement(`.list-button-magnet`, MAGNET_LIST, direction = 'prev'),
+    label: "Select previous magnet link",
   },
   "A": {
     action: () => sortFilter({category: 'Anime', side: 'left'}),
@@ -53,6 +61,7 @@ const KEYS = {
 const SCRIPT_ID = "x1337x-custom-enhancements"
 const MODAL_ID = "x1337x-shortcut-modal"
 const SHORTCUT_TOOLTIP = ` Press "?" to view shortcut keys.`
+const MAGNET_LIST = {}
 
 
 // -------------------------------------------
